@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wecom-holmes-adapter
+  namespace: sre-ai
+data:
+  APP_NAME: wecom-holmes-adapter
+  LOG_LEVEL: INFO
+  HOLMES_API_URL: http://172.16.119.92:30395
+  HOLMES_TIMEOUT_SECONDS: "300"
+  HOLMES_MODEL: ""
+  ALLOWED_USER_IDS: "CHANGE_ME_WECom_USERID"
+  ALLOW_ALL_USERS: "false"
+  REDIS_URL: "redis://redis.sre-ai.svc.cluster.local:6379/0"
+  SESSION_TTL_SECONDS: "86400"
+  MAX_CONCURRENT_CHATS: "8"
+  MAX_REPLY_CHARS: "12000"
+  STREAM_UPDATE_INTERVAL_SECONDS: "1.0"

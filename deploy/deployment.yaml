@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wecom-holmes-adapter
+  namespace: sre-ai
+  labels:
+    app: wecom-holmes-adapter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wecom-holmes-adapter
+  template:
+    metadata:
+      labels:
+        app: wecom-holmes-adapter
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: adapter
+          image: harbor.example.com/sre-ai/wecom-holmes-adapter:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: wecom-holmes-adapter
+          env:
+            - name: WECHAT_BOT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: wecom-holmes-adapter
+                  key: WECHAT_BOT_ID
+            - name: WECHAT_BOT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wecom-holmes-adapter
+                  key: WECHAT_BOT_SECRET
+            - name: HOLMES_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wecom-holmes-adapter
+                  key: HOLMES_API_KEY
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wecom-holmes-adapter
+  namespace: sre-ai
+spec:
+  type: ClusterIP
+  selector:
+    app: wecom-holmes-adapter
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
